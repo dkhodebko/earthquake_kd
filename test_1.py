@@ -5,3 +5,5 @@ def me_sleep(n: int = 1) -> None:
     print(f"I've slept for {n} secs")
 
 me_sleep()
+
+a = 1
