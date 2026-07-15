@@ -7,6 +7,7 @@ from airflow.operators.python import PythonOperator
 from airflow.operators.empty import EmptyOperator
 import pendulum
 import duckdb
+import logging
 
 # Config
 OWNER = 'kd'
