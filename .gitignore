@@ -222,3 +222,4 @@ cred.py
 data/
 logs/
 airflow.cfg
+.vscode/
