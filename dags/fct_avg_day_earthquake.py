@@ -9,7 +9,7 @@ import pendulum
 
 # Config
 OWNER = 'kd'
-DAG_ID = 'fct_count_day_earthquake'
+DAG_ID = 'fct_avg_day_earthquake'
 
 # Used tables in DAG
 LAYER = 'raw'
