@@ -136,7 +136,7 @@ def get_and_transfer_raw_data_to_ods_pg(**context):
 with DAG(
     dag_id=DAG_ID,
     start_date=pendulum.datetime(2026, 6, 15, tz="Europe/Moscow"),
-    schedule_interval="0 9 * * *",
+    schedule_interval="15 15 * * *",
     tags=['ods', 's3', 'PostgreSQL'],
     catchup=True,
     concurrency=1,

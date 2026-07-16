@@ -30,7 +30,7 @@ DEFAULT_ARGS = {
 with DAG(
     dag_id=DAG_ID,
     start_date=pendulum.datetime(2026, 6, 15, tz="Europe/Moscow"),
-    schedule_interval="0 9 * * *",
+    schedule_interval="15 15 * * *",
     tags=['dm', 'PostgreSQL'],
     catchup=True,
     concurrency=1,

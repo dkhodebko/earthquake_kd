@@ -68,7 +68,7 @@ def get_and_transfer_api_data_to_s3(**context):
 with DAG(
     dag_id=DAG_ID,
     start_date=pendulum.datetime(2026, 6, 15, tz="Europe/Moscow"),
-    schedule_interval="0 9 * * *",
+    schedule_interval="15 15 * * *",
     tags=['raw', 'API', 's3'],
     catchup=True,
     concurrency=1,
