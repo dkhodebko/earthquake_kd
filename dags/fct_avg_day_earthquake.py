@@ -1,5 +1,5 @@
 """
-Построение витрины с количеством землетрясений по дням
+Построение витрины со средним значением по землетрясениям
 """
 from airflow import DAG
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
@@ -15,7 +15,7 @@ DAG_ID = 'fct_count_day_earthquake'
 LAYER = 'raw'
 SOURCE = 'earthquake'
 SCHEMA = 'dm'
-TARGET_TABLE = 'fct_count_day_earthquake'
+TARGET_TABLE = 'fct_avg_day_earthquake'
 
 # PostgreSQL
 PG_CONNECT = 'dwh_postgres'
@@ -40,7 +40,7 @@ with DAG(
 ) as dag:
 
     dag.doc_md = __doc__
-    
+
     start = EmptyOperator(task_id='start')
 
     sensor_on_raw_layer = ExternalTaskSensor(
@@ -49,7 +49,7 @@ with DAG(
         allowed_states=["success"],
         mode="reschedule",
         timeout=360000,  # длительность работы сенсора
-        poke_interval=30,  # частота проверки
+        poke_interval=60,  # частота проверки
     )
 
     drop_stg_table_before = SQLExecuteQueryOperator(
@@ -57,8 +57,8 @@ with DAG(
         conn_id=PG_CONNECT,
         autocommit=True,
         sql=f"""
-        DROP TABLE IF EXISTS stg."tmp_{TARGET_TABLE}_{{{{ data_interval_start.format('YYYY-MM-DD') }}}}"
-        """,
+            DROP TABLE IF EXISTS stg."tmp_{TARGET_TABLE}_{{{{ data_interval_start.format('YYYY-MM-DD') }}}}"
+            """,
     )
 
     create_stg_table = SQLExecuteQueryOperator(
@@ -66,16 +66,16 @@ with DAG(
         conn_id=PG_CONNECT,
         autocommit=True,
         sql=f"""
-        CREATE TABLE stg."tmp_{TARGET_TABLE}_{{{{ data_interval_start.format('YYYY-MM-DD') }}}}" AS
-        SELECT
-            time::date AS date,
-            count(*)
-        FROM
-            ods.fct_earthquake
-        WHERE
-            time::date = '{{{{ data_interval_start.format('YYYY-MM-DD') }}}}'
-        GROUP BY 1
-        """,
+            CREATE TABLE stg."tmp_{TARGET_TABLE}_{{{{ data_interval_start.format('YYYY-MM-DD') }}}}" AS
+            SELECT
+                time::date AS date,
+                avg(mag::float)
+            FROM
+                ods.fct_earthquake
+            WHERE
+                time::date = '{{{{ data_interval_start.format('YYYY-MM-DD') }}}}'
+            GROUP BY 1
+            """,
     )
 
     drop_from_target_table = SQLExecuteQueryOperator(
@@ -83,12 +83,12 @@ with DAG(
         conn_id=PG_CONNECT,
         autocommit=True,
         sql=f"""
-        DELETE FROM {SCHEMA}.{TARGET_TABLE}
-        WHERE date IN
-        (
-            SELECT date FROM stg."tmp_{TARGET_TABLE}_{{{{ data_interval_start.format('YYYY-MM-DD') }}}}"
-        )
-        """,
+            DELETE FROM {SCHEMA}.{TARGET_TABLE}
+            WHERE date IN
+            (
+                SELECT date FROM stg."tmp_{TARGET_TABLE}_{{{{ data_interval_start.format('YYYY-MM-DD') }}}}"
+            )
+            """,
     )
 
     insert_into_target_table = SQLExecuteQueryOperator(
@@ -96,9 +96,9 @@ with DAG(
         conn_id=PG_CONNECT,
         autocommit=True,
         sql=f"""
-        INSERT INTO {SCHEMA}.{TARGET_TABLE}
-        SELECT * FROM stg."tmp_{TARGET_TABLE}_{{{{ data_interval_start.format('YYYY-MM-DD') }}}}"
-        """,
+            INSERT INTO {SCHEMA}.{TARGET_TABLE}
+            SELECT * FROM stg."tmp_{TARGET_TABLE}_{{{{ data_interval_start.format('YYYY-MM-DD') }}}}"
+            """,
     )
 
     drop_stg_table_after = SQLExecuteQueryOperator(
@@ -106,8 +106,8 @@ with DAG(
         conn_id=PG_CONNECT,
         autocommit=True,
         sql=f"""
-        DROP TABLE IF EXISTS stg."tmp_{TARGET_TABLE}_{{{{ data_interval_start.format('YYYY-MM-DD') }}}}"
-        """,
+            DROP TABLE IF EXISTS stg."tmp_{TARGET_TABLE}_{{{{ data_interval_start.format('YYYY-MM-DD') }}}}"
+            """,
     )
 
     end = EmptyOperator(task_id="end")
